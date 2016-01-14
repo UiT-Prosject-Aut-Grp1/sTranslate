@@ -1,7 +1,7 @@
 using System;
 using System.Configuration;
 
-namespace sCore.Base
+namespace sTranslate.Tools
 {
 	public sealed class Enums
 	{

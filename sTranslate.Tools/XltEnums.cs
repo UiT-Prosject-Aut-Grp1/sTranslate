@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using sCore.Base;
 
-namespace sCore.Translation
+namespace sTranslate.Tools
 {
     public class EnumsXlt
     {

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using sCore.Service.Model;
+using Model = sTranslate.Model;
 
-namespace sCore.Translation
+namespace sTranslate.Tools
 {
     /// <summary>
     /// Translate :
@@ -15,7 +15,7 @@ namespace sCore.Translation
     /// </summary>
     public class XltTool
     {
-        private static List<Service.Model.Translation> _translateColl = null; 
+        private static List<Model.Translation> _translateColl = null; 
         public static string FromLanguageCode = "en";
 
         /// <summary>
@@ -23,15 +23,15 @@ namespace sCore.Translation
         /// </summary>
         /// <param name="reRead">ReRead from database</param>
         /// <returns>Translation collection</returns>
-        public static List<Service.Model.Translation> GetTranslations(bool reRead = false)
+        public static List<Model.Translation> GetTranslations(bool reRead = false)
         {
             if (_translateColl == null || reRead == true)
             {
-                using (var ctx = new ServiceEntities())
+                using (var ctx = new Model.TranslationEntities())
                 {
                     _translateColl = (from xl in ctx.Translation select xl).ToList();
                     if (_translateColl == null)
-                        _translateColl = new List<Service.Model.Translation>();
+                        _translateColl = new List<Model.Translation>();
                     return _translateColl;
                 }
             }
@@ -55,8 +55,8 @@ namespace sCore.Translation
             if (fromText.Trim() == "")
                 return "";
 
-            List<Service.Model.Translation> coll = new List<Service.Model.Translation>();
-            using (var ctx = new ServiceEntities())
+            List<Model.Translation> coll = new List<Model.Translation>();
+            using (var ctx = new Model.TranslationEntities())
             {
                 if (string.IsNullOrEmpty(toLanguageCode)) 
                     toLanguageCode = "no";
@@ -98,7 +98,7 @@ namespace sCore.Translation
                 toLanguageCode = "no";
 
             // Serach collection
-            foreach (Service.Model.Translation xl in _translateColl)
+            foreach (Model.Translation xl in _translateColl)
             {
                 if (xl.Criteria.ToLower() == criteria.ToString().ToLower() &&
                     xl.FromLang == FromLanguageCode &&
@@ -116,9 +116,9 @@ namespace sCore.Translation
             if (fromText.Trim() == "")
                 return "";
             string toText = fromText;
-            List<Service.Model.Translation> coll;
+            List<Model.Translation> coll;
             coll = XltTool.GetXltByKeys(property, context, EnumsXlt.Criterias.None);
-            foreach (Service.Model.Translation tr in coll)
+            foreach (Model.Translation tr in coll)
             {
                 switch (tr.Criteria.ToString().ToLower())
                 {
@@ -161,10 +161,10 @@ namespace sCore.Translation
         /// <param name="context"></param>
         /// <param name="toLanguageCode"></param>
         /// <returns></returns>
-        public static List<Service.Model.Translation> GetTranslationByKeys(EnumsXlt.Criterias criteria, EnumsXlt.PropertyTypes property, string context = null, string toLanguageCode = "no")
+        public static List<Model.Translation> GetTranslationByKeys(EnumsXlt.Criterias criteria, EnumsXlt.PropertyTypes property, string context = null, string toLanguageCode = "no")
         {
-            List<Service.Model.Translation> coll = new List<Service.Model.Translation>();
-            using (var ctx = new ServiceEntities())
+            List<Model.Translation> coll = new List<Model.Translation>();
+            using (var ctx = new Model.TranslationEntities())
             {
                 if (string.IsNullOrEmpty(toLanguageCode))
                     toLanguageCode = "no";
@@ -177,7 +177,7 @@ namespace sCore.Translation
                               (context == null || (context != null && xl.Context.ToLower() == context.ToLower()))
                         select xl).ToList();
 
-                return (coll != null) ? coll : new List<Service.Model.Translation>();
+                return (coll != null) ? coll : new List<Model.Translation>();
             }
         }
 
@@ -189,20 +189,20 @@ namespace sCore.Translation
         /// <param name="context"></param>
         /// <param name="toLanguageCode"></param>
         /// <returns></returns>
-        public static List<Service.Model.Translation> GetXltByKeys(EnumsXlt.PropertyTypes property, string context, EnumsXlt.Criterias criteria = EnumsXlt.Criterias.None, string toLanguageCode = "no")
+        public static List<Model.Translation> GetXltByKeys(EnumsXlt.PropertyTypes property, string context, EnumsXlt.Criterias criteria = EnumsXlt.Criterias.None, string toLanguageCode = "no")
         {
-            List<Service.Model.Translation> newColl = new List<Service.Model.Translation>();
+            List<Model.Translation> newColl = new List<Model.Translation>();
             if (context == null)
                 return newColl; 
 
             GetTranslations(); 
-            using (var ctx = new ServiceEntities())
+            using (var ctx = new Model.TranslationEntities())
             {
                 if (string.IsNullOrEmpty(toLanguageCode))
                     toLanguageCode = "no";
 
                 // Serach matching entities
-                foreach (Service.Model.Translation xl in _translateColl)
+                foreach (Model.Translation xl in _translateColl)
                 {
                     if (((criteria == EnumsXlt.Criterias.None) || (criteria != EnumsXlt.Criterias.None && xl.Criteria.ToLower() == criteria.ToString().ToLower())) &&
                         xl.FromLang == FromLanguageCode &&
@@ -223,7 +223,7 @@ namespace sCore.Translation
         /// <param name="text"></param>
         /// <param name="tr"></param>
         /// <returns></returns>
-        public static bool IsCriteriaMet(string text, Service.Model.Translation tr)
+        public static bool IsCriteriaMet(string text, Model.Translation tr)
         {
             // string[] arr = Tool.RxReplace(c.Text, "(<.*?>)|([\n]+)|(&nbsp;)", "").Split(new string[] { "\r", ":", "  " }, StringSplitOptions.RemoveEmptyEntries);
             switch (EnumsXlt.ToCriteria(tr.Criteria))
@@ -248,5 +248,34 @@ namespace sCore.Translation
             return false;
         }
 
+        /// <summary>
+        /// Get nestled exception message
+        /// </summary>
+        /// <param name="prompt">Optionaly, the message prompt</param>
+        /// <param name="ex"></param>
+        /// <returns></returns>
+        public static string ExceptionMsg(Exception ex, bool InnerOnly = false)
+        {
+            if (ex == null)
+                return "";
+
+            Exception e = ex;
+            if (InnerOnly)
+            {
+                while (e.InnerException != null)
+                    e = e.InnerException;
+                return e.Message;
+            }
+            else
+            {
+                string msg = "";
+                while (e != null)
+                {
+                    msg += (msg != "") ? ";" + e.Message : e.Message; 
+                    e = e.InnerException;
+                }
+                return msg;
+            }
+        }
     }
 }
